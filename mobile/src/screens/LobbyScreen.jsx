@@ -71,7 +71,7 @@ export default function LobbyScreen({ navigation }) {
     const interval = setInterval(() => {
       refreshRoom();
       checkForStartedSession();
-    }, 2000);
+    }, 300);
 
     return () => clearInterval(interval);
   }, [refreshRoom, checkForStartedSession]);

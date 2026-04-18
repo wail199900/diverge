@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { finishSession, submitAnswer } from "../api/sessions";
@@ -24,21 +24,7 @@ export default function QuestionScreen({ navigation }) {
     [questions, currentIndex],
   );
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          handleTimeUp();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleTimeUp = async () => {
+  const handleTimeUp = useCallback(async () => {
     if (hasFinishedRef.current) return;
     hasFinishedRef.current = true;
 
@@ -59,7 +45,26 @@ export default function QuestionScreen({ navigation }) {
       }
       navigation.replace("Waiting");
     }
-  };
+  }, [roomCode, username, navigation]);
+
+  useEffect(() => {
+    if (!session?.endsAt) return;
+
+    const updateTimer = () => {
+      const endTime = new Date(session.endsAt).getTime();
+      const now = Date.now();
+      const remainingMs = endTime - now;
+      const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+
+      setTimeLeft(remainingSeconds);
+      if (remainingSeconds <= 0) {
+        handleTimeUp();
+      }
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [session, handleTimeUp]);
 
   const handleAnswer = async (answer) => {
     if (!currentQuestion || submitting || hasFinishedRef.current) return;

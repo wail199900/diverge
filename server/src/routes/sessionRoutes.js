@@ -49,6 +49,9 @@ router.post("/start", async (req, res) => {
         .json({ message: "Not enough active questions available" });
     }
 
+    const startedAt = new Date();
+    const endsAt = new Date(startedAt.getTime() + 60 * 1000);
+
     const session = await GameSession.create({
       roomCode: normalizedRoomCode,
       questions: questions.map((q) => q._id),
@@ -58,6 +61,8 @@ router.post("/start", async (req, res) => {
       })),
       answers: [],
       status: "active",
+      startedAt,
+      endsAt,
     });
 
     room.status = "playing";
@@ -68,6 +73,10 @@ router.post("/start", async (req, res) => {
       sessionId: session._id,
       roomCode: session.roomCode,
       questions,
+      players: session.players,
+      status: session.status,
+      startedAt: session.startedAt,
+      endsAt: session.endsAt,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });

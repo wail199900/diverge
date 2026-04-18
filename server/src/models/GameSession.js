@@ -63,6 +63,15 @@ const gameSessionSchema = new mongoose.Schema(
       enum: ["active", "completed"],
       default: "active",
     },
+    startedAt: {
+      type: Date,
+      required: true,
+    },
+
+    endsAt: {
+      type: Date,
+      required: true,
+    },
   },
   {
     timestamps: true,
