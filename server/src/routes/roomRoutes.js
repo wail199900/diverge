@@ -1,0 +1,99 @@
+const express = require("express");
+const Room = require("../models/Room");
+const generateRoomCode = require("../utils/generateRoomCode");
+
+const router = express.Router();
+
+// Create room route
+
+router.post("/create", async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username || !username.trim()) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    let roomCode;
+    let existingRoom;
+
+    do {
+      roomCode = generateRoomCode();
+      existingRoom = await Room.findOne({ roomCode });
+    } while (existingRoom);
+
+    const room = await Room.create({
+      roomCode,
+      players: [
+        {
+          username: username.trim(),
+        },
+      ],
+    });
+    return res.status(201).json(room);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+//Join room route
+
+router.post("/join", async (req, res) => {
+  try {
+    const { roomCode, username } = req.body;
+
+    if (!roomCode || !username || !username.trim()) {
+      return res.status(400).json({
+        message: "Room code and username are required",
+      });
+    }
+
+    const room = await Room.findOne({
+      roomCode: roomCode.trim().toUpperCase(),
+    });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    const usernameExists = room.players.some(
+      (player) =>
+        player.username.toLowerCase() === username.trim().toLowerCase(),
+    );
+
+    if (usernameExists) {
+      return res
+        .status(400)
+        .json({ message: "Username already taken in this room" });
+    }
+
+    room.players.push({
+      username: username.trim(),
+    });
+
+    await room.save();
+
+    return res.status(200).json(room);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+// Get room by code route
+router.get("/:roomCode", async (req, res) => {
+  try {
+    const { roomCode } = req.params;
+    const room = await Room.findOne({
+      roomCode: roomCode.trim().toUpperCase(),
+    });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+    return res.status(200).json(room);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+module.exports = router;
