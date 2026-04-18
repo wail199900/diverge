@@ -1,6 +1,7 @@
 const express = require("express");
 const Room = require("../models/Room");
 const generateRoomCode = require("../utils/generateRoomCode");
+const GameSession = require("../models/GameSession");
 
 const router = express.Router();
 
@@ -91,6 +92,37 @@ router.get("/:roomCode", async (req, res) => {
       return res.status(404).json({ message: "Room not found" });
     }
     return res.status(200).json(room);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+// Reset room route
+router.post("/:roomCode/reset", async (req, res) => {
+  try {
+    const roomCode = req.params.roomCode.trim().toUpperCase();
+
+    const room = await Room.findOne({ roomCode });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    room.status = "waiting";
+    room.players = room.players.map((player) => ({
+      username: player.username,
+      socketId: player.socketId || null,
+      ready: false,
+    }));
+
+    await room.save();
+
+    await GameSession.deleteMany({ roomCode });
+
+    return res.status(200).json({
+      message: "Room reset successfully",
+      room,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
