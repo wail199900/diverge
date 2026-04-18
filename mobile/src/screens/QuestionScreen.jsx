@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { finishSession, submitAnswer } from "../api/sessions";
@@ -7,19 +7,62 @@ import useGameStore from "../store/useGameStore";
 export default function QuestionScreen({ navigation }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(60);
+
+  const hasFinishedRef = useRef(false);
 
   const username = useGameStore((state) => state.username);
   const roomCode = useGameStore((state) => state.roomCode);
   const session = useGameStore((state) => state.session);
 
-  const questions = session?.questions || [];
+  const questions = useMemo(() => {
+    return session?.questions || [];
+  }, [session]);
+
   const currentQuestion = useMemo(
     () => questions[currentIndex],
     [questions, currentIndex],
   );
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleTimeUp();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleTimeUp = async () => {
+    if (hasFinishedRef.current) return;
+    hasFinishedRef.current = true;
+
+    try {
+      await finishSession(roomCode, username);
+      navigation.replace("Waiting");
+    } catch (error) {
+      if (error?.response?.status === 400) {
+        Alert.alert(
+          "Time's up",
+          error?.response?.data?.message || "Round ended.",
+        );
+      } else {
+        Alert.alert(
+          "Error",
+          error?.response?.data?.message || "Failed to finish session",
+        );
+      }
+      navigation.replace("Waiting");
+    }
+  };
+
   const handleAnswer = async (answer) => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || submitting || hasFinishedRef.current) return;
 
     try {
       setSubmitting(true);
@@ -34,8 +77,9 @@ export default function QuestionScreen({ navigation }) {
       const isLastQuestion = currentIndex === questions.length - 1;
 
       if (isLastQuestion) {
+        hasFinishedRef.current = true;
         await finishSession(roomCode, username);
-        navigation.navigate("Waiting");
+        navigation.replace("Waiting");
         return;
       }
 
@@ -60,6 +104,7 @@ export default function QuestionScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Text style={styles.timer}>⏱ {timeLeft}s</Text>
       <Text style={styles.progress}>
         Question {currentIndex + 1} / {questions.length}
       </Text>
@@ -69,7 +114,7 @@ export default function QuestionScreen({ navigation }) {
       <TouchableOpacity
         style={styles.button}
         onPress={() => handleAnswer("yes")}
-        disabled={submitting}
+        disabled={submitting || hasFinishedRef.current}
       >
         <Text style={styles.buttonText}>Yes</Text>
       </TouchableOpacity>
@@ -77,7 +122,7 @@ export default function QuestionScreen({ navigation }) {
       <TouchableOpacity
         style={styles.button}
         onPress={() => handleAnswer("no")}
-        disabled={submitting}
+        disabled={submitting || hasFinishedRef.current}
       >
         <Text style={styles.buttonText}>No</Text>
       </TouchableOpacity>
@@ -113,5 +158,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 18,
     fontWeight: "600",
+  },
+  timer: {
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 12,
   },
 });

@@ -231,13 +231,13 @@ router.post("/finish", async (req, res) => {
       (a) => a.username.toLowerCase() === normalizedUsername.toLowerCase(),
     ).length;
 
-    if (playerAnswersCount !== session.questions.length) {
+    /*if (playerAnswersCount !== session.questions.length) {
       return res.status(400).json({
         message: "Player cannot finish before answering all questions",
         answered: playerAnswersCount,
         required: session.questions.length,
       });
-    }
+    }*/
 
     player.finished = true;
 
