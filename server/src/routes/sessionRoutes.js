@@ -298,40 +298,41 @@ router.get("/:roomCode/results", async (req, res) => {
     const [playerOne, playerTwo] = session.players;
 
     let matchesCount = 0;
+
     const mismatches = session.questions.reduce((acc, question) => {
       const firstAnswer = session.answers.find(
         (a) =>
           a.username.toLowerCase() === playerOne.username.toLowerCase() &&
           a.questionId.toString() === question._id.toString(),
       );
+
       const secondAnswer = session.answers.find(
         (a) =>
           a.username.toLowerCase() === playerTwo.username.toLowerCase() &&
           a.questionId.toString() === question._id.toString(),
       );
 
-      if (
-        firstAnswer &&
-        secondAnswer &&
-        firstAnswer.answer !== secondAnswer.answer
-      ) {
-        acc.push({
-          questionId: question._id,
-          questionText: question.text,
-          answers: [
-            {
-              username: playerOne.username,
-              answer: firstAnswer.answer,
-            },
-            {
-              username: playerTwo.username,
-              answer: secondAnswer.answer,
-            },
-          ],
-        });
-      } else {
-        matchesCount += 1;
+      if (firstAnswer && secondAnswer) {
+        if (firstAnswer.answer !== secondAnswer.answer) {
+          acc.push({
+            questionId: question._id,
+            questionText: question.text,
+            answers: [
+              {
+                username: playerOne.username,
+                answer: firstAnswer.answer,
+              },
+              {
+                username: playerTwo.username,
+                answer: secondAnswer.answer,
+              },
+            ],
+          });
+        } else {
+          matchesCount += 1;
+        }
       }
+
       return acc;
     }, []);
 
