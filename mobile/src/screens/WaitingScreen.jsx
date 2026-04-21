@@ -3,6 +3,7 @@ import { Text, StyleSheet, ActivityIndicator, Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getResults, getSessionProgress } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
+import colors from "../theme/colors";
 
 export default function WaitingScreen({ navigation }) {
   const [progress, setProgress] = useState(null);
@@ -106,50 +107,55 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
+    backgroundColor: colors.background,
   },
   title: {
     fontSize: 24,
-    fontWeight: "600",
+    fontWeight: "700",
     marginTop: 20,
     textAlign: "center",
+    color: colors.text,
   },
   subtitle: {
     fontSize: 16,
     marginTop: 10,
     textAlign: "center",
-    color: "#666",
+    color: colors.subtext,
     marginBottom: 24,
   },
   card: {
     width: "100%",
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 16,
+    borderColor: colors.border,
+    borderRadius: 20,
     padding: 20,
     marginTop: 12,
+    backgroundColor: colors.surface,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 16,
     textAlign: "center",
+    color: colors.text,
   },
   playerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#F1F1F1",
   },
   playerName: {
     fontSize: 17,
     fontWeight: "600",
     marginBottom: 4,
+    color: colors.text,
   },
   playerMeta: {
     fontSize: 14,
-    color: "#666",
+    color: colors.subtext,
   },
 
   status: {

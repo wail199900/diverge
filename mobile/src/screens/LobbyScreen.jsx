@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getRoom } from "../api/rooms";
 import { getActiveSession, startSession } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
+import colors from "../theme/colors";
 
 export default function LobbyScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
@@ -86,11 +87,16 @@ export default function LobbyScreen({ navigation }) {
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Players</Text>
-        {room?.players?.map((player, index) => (
-          <Text key={`${player.username}-${index}`} style={styles.player}>
-            • {player.username}
-          </Text>
-        ))}
+        {room?.players?.map((player, index) => {
+          const isYou = player.username === username;
+          return (
+            <View key={`${player.username}-${index}`} style={styles.playerRow}>
+              <Text style={styles.playerName}>
+                {player.username} {isYou ? "(You)" : ""}
+              </Text>
+            </View>
+          );
+        })}
       </View>
 
       <TouchableOpacity style={styles.secondaryButton} onPress={refreshRoom}>
@@ -99,11 +105,11 @@ export default function LobbyScreen({ navigation }) {
 
       {isHost && (
         <TouchableOpacity
-          style={[styles.button, !canStart && styles.disabledButton]}
+          style={[styles.primaryButton, !canStart && styles.disabledButton]}
           onPress={handleStartGame}
           disabled={!canStart || loading}
         >
-          <Text style={styles.buttonText}>
+          <Text style={styles.primaryButtonText}>
             {loading ? "Starting..." : "Start Game"}
           </Text>
         </TouchableOpacity>
@@ -123,61 +129,87 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: "center",
+    backgroundColor: colors.background,
   },
+
   title: {
     fontSize: 32,
     fontWeight: "700",
-    marginBottom: 12,
+    marginBottom: 10,
     textAlign: "center",
+    color: colors.text,
   },
+
   roomCode: {
-    fontSize: 18,
+    fontSize: 17,
     textAlign: "center",
     marginBottom: 24,
+    color: colors.subtext,
   },
+
   card: {
+    backgroundColor: colors.surface,
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#ddd",
-    marginBottom: 20,
+    borderColor: colors.border,
+    marginBottom: 16,
   },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: 14,
+    color: colors.text,
   },
-  player: {
+
+  playerRow: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F1F1",
+  },
+
+  playerName: {
     fontSize: 16,
-    marginBottom: 8,
+    color: colors.text,
+    fontWeight: "500",
   },
-  button: {
-    backgroundColor: "#222",
+
+  primaryButton: {
+    backgroundColor: colors.primary,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     marginTop: 12,
   },
+
+  primaryButtonText: {
+    color: colors.primaryText,
+    textAlign: "center",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+
   secondaryButton: {
     borderWidth: 1,
-    borderColor: "#222",
-    padding: 16,
-    borderRadius: 12,
+    borderColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 14,
   },
   secondaryButtonText: {
+    color: colors.primary,
     textAlign: "center",
     fontWeight: "600",
+    fontSize: 16,
   },
-  buttonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "600",
-  },
+
   disabledButton: {
     opacity: 0.5,
   },
+
   infoText: {
-    marginTop: 16,
+    marginTop: 18,
     textAlign: "center",
     fontSize: 16,
+    color: colors.subtext,
   },
 });

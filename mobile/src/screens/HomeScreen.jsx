@@ -1,24 +1,29 @@
-import { Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Text, TouchableOpacity, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import colors from "../theme/colors";
 
 export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Diverge</Text>
-      <Text style={styles.subtitle}>Discover where answers split.</Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate("CreateRoom")}
-      >
-        <Text style={styles.buttonText}>Creat Room</Text>
-      </TouchableOpacity>
+      <View style={styles.hero}>
+        <Text style={styles.title}>Diverge</Text>
+        <Text style={styles.subtitle}>Discover where answers split.</Text>
+      </View>
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("CreateRoom")}
+        >
+          <Text style={styles.buttonText}>Creat Room</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate("JoinRoom")}
-      >
-        <Text style={styles.buttonText}>Join Room</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => navigation.navigate("JoinRoom")}
+        >
+          <Text style={styles.secondaryButtonText}>Join Room</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -28,28 +33,57 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 24,
+    backgroundColor: colors.background,
+  },
+
+  hero: {
+    marginBottom: 28,
   },
 
   title: {
-    fontSize: 36,
+    fontSize: 40,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 12,
+    color: colors.text,
+    marginBottom: 10,
   },
 
   subtitle: {
     fontSize: 16,
     textAlign: "center",
-    marginBottom: 32,
+    color: colors.subtext,
   },
+
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 20,
+    padding: 20,
+  },
+
   button: {
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: "#222",
-    marginBottom: 16,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    marginBottom: 14,
+    paddingVertical: 16,
   },
   buttonText: {
-    color: "#fff",
+    color: colors.primaryText,
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  secondaryButton: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 14,
+  },
+
+  secondaryButtonText: {
+    color: colors.primary,
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
