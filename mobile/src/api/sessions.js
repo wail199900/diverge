@@ -44,3 +44,13 @@ export const getResults = async (roomCode) => {
   const response = await client.get(`/api/sessions/${roomCode}/results`);
   return response.data;
 };
+
+export const getSessionHistory = async (username) => {
+  const response = await client.get(`/api/sessions/history/${username}`);
+  return response.data;
+};
+
+export const getSessionDetails = async (sessionId) => {
+  const response = await client.get(`/api/sessions/details/${sessionId}`);
+  return response.data;
+};

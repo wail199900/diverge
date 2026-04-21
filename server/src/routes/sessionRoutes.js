@@ -61,6 +61,7 @@ router.post("/start", async (req, res) => {
 
     const session = await GameSession.create({
       roomCode: normalizedRoomCode,
+      category,
       questions: questions.map((q) => q._id),
       players: room.players.map((player) => ({
         username: player.username,
@@ -387,6 +388,151 @@ router.get("/:roomCode/progress", async (req, res) => {
       roomCode: session.roomCode,
       status: session.status,
       players,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+// get completed session history by username
+router.get("/history/:username", async (req, res) => {
+  try {
+    const username = req.params.username.trim().toLowerCase();
+
+    const sessions = await GameSession.find({
+      status: "completed",
+      "players.username": { $regex: new RegExp(`^${username}$`, "i") },
+    })
+      .populate("questions")
+      .sort({ updatedAt: -1 });
+
+    const history = sessions.map((session) => {
+      if (session.players.length !== 2) {
+        return {
+          sessionId: session._id,
+          roomCode: session.roomCode,
+          category: session.category || "all",
+          completedAt: session.updatedAt,
+          totalQuestions: session.questions.length,
+          matchesCount: 0,
+          mismatchesCount: 0,
+        };
+      }
+
+      const [playerOne, playerTwo] = session.players;
+
+      let matchesCount = 0;
+      let mismatchesCount = 0;
+
+      session.questions.forEach((question) => {
+        const firstAnswer = session.answers.find(
+          (a) =>
+            a.username.toLowerCase() === playerOne.username.toLowerCase() &&
+            a.questionId.toString() === question._id.toString(),
+        );
+
+        const secondAnswer = session.answers.find(
+          (a) =>
+            a.username.toLowerCase() === playerTwo.username.toLowerCase() &&
+            a.questionId.toString() === question._id.toString(),
+        );
+
+        if (firstAnswer && secondAnswer) {
+          if (firstAnswer.answer === secondAnswer.answer) {
+            matchesCount += 1;
+          } else {
+            mismatchesCount += 1;
+          }
+        }
+      });
+
+      return {
+        sessionId: session._id,
+        roomCode: session.roomCode,
+        category: session.category || "all",
+        completedAt: session.updatedAt,
+        totalQuestions: session.questions.length,
+        matchesCount,
+        mismatchesCount,
+      };
+    });
+
+    return res.status(200).json(history);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+// get completed session details by session id
+router.get("/details/:sessionId", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await GameSession.findById(sessionId).populate("questions");
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    if (session.status !== "completed") {
+      return res.status(400).json({ message: "Session is not completed yet" });
+    }
+
+    if (session.players.length !== 2) {
+      return res
+        .status(400)
+        .json({ message: "Session requires exactly 2 players" });
+    }
+
+    const [playerOne, playerTwo] = session.players;
+    let matchesCount = 0;
+
+    const mismatches = session.questions.reduce((acc, question) => {
+      const firstAnswer = session.answers.find(
+        (a) =>
+          a.username.toLowerCase() === playerOne.username.toLowerCase() &&
+          a.questionId.toString() === question._id.toString(),
+      );
+
+      const secondAnswer = session.answers.find(
+        (a) =>
+          a.username.toLowerCase() === playerTwo.username.toLowerCase() &&
+          a.questionId.toString() === question._id.toString(),
+      );
+
+      if (firstAnswer && secondAnswer) {
+        if (firstAnswer.answer !== secondAnswer.answer) {
+          acc.push({
+            questionId: question._id,
+            questionText: question.text,
+            answers: [
+              {
+                username: playerOne.username,
+                answer: firstAnswer.answer,
+              },
+              {
+                username: playerTwo.username,
+                answer: secondAnswer.answer,
+              },
+            ],
+          });
+        } else {
+          matchesCount += 1;
+        }
+      }
+
+      return acc;
+    }, []);
+
+    return res.status(200).json({
+      sessionId: session._id,
+      roomCode: session.roomCode,
+      category: session.category || "all",
+      completedAt: session.updatedAt,
+      totalQuestions: session.questions.length,
+      matchesCount,
+      mismatchesCount: mismatches.length,
+      mismatches,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });

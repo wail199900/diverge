@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, StyleSheet, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import colors from "../theme/colors";
 
@@ -22,6 +22,13 @@ export default function HomeScreen({ navigation }) {
           onPress={() => navigation.navigate("JoinRoom")}
         >
           <Text style={styles.secondaryButtonText}>Join Room</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => navigation.navigate("History")}
+        >
+          <Text style={styles.secondaryButtonText}>History</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -80,6 +87,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 14,
+    marginTop: 12,
   },
 
   secondaryButtonText: {

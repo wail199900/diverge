@@ -44,6 +44,11 @@ const gameSessionSchema = new mongoose.Schema(
       uppercase: true,
       trim: true,
     },
+    category: {
+      type: String,
+      enum: ["all", "fun", "deep", "dating", "friends", "general"],
+      default: "all",
+    },
     questions: [
       {
         type: mongoose.Schema.Types.ObjectId,
