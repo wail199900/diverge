@@ -35,6 +35,11 @@ const roomSchema = new mongoose.Schema(
       enum: ["waiting", "playing", "finished"],
       default: "waiting",
     },
+    selectedCategory: {
+      type: String,
+      enum: ["all", "fun", "deep", "dating", "friends", "general"],
+      default: "all",
+    },
     players: {
       type: [playerSchema],
       default: [],

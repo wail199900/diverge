@@ -22,3 +22,11 @@ export const resetRoom = async (roomCode) => {
   const response = await client.post(`/api/rooms/${roomCode}/reset`);
   return response.data;
 };
+
+export const updateRoomCategory = async (roomCode, username, category) => {
+  const response = await client.patch(`/api/rooms/${roomCode}/category`, {
+    username,
+    category,
+  });
+  return response.data;
+};

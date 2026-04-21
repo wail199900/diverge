@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post("/start", async (req, res) => {
   try {
-    const { roomCode, category } = req.body;
+    const { roomCode } = req.body;
 
     if (!roomCode) {
       return res.status(400).json({ message: "Room code is required" });
@@ -21,6 +21,8 @@ router.post("/start", async (req, res) => {
     if (!room) {
       return res.status(400).json({ message: "Room not found" });
     }
+    const category = room.selectedCategory || "all";
+
     if (room.players.length !== 2) {
       return res
         .status(400)

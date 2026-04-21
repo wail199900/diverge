@@ -15,7 +15,7 @@ export default function QuestionScreen({ navigation }) {
   const username = useGameStore((state) => state.username);
   const roomCode = useGameStore((state) => state.roomCode);
   const session = useGameStore((state) => state.session);
-  const selectedCategory = useGameStore((state) => state.selectedCategory);
+  const selectedCategory = session?.category || "all";
 
   const questions = useMemo(() => {
     return session?.questions || [];

@@ -25,6 +25,7 @@ router.post("/create", async (req, res) => {
 
     const room = await Room.create({
       roomCode,
+      selectedCategory: "all",
       players: [
         {
           username: username.trim(),
@@ -121,6 +122,62 @@ router.post("/:roomCode/reset", async (req, res) => {
 
     return res.status(200).json({
       message: "Room reset successfully",
+      room,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+// Update room category route
+router.patch("/:roomCode/category", async (req, res) => {
+  try {
+    const roomCode = req.params.roomCode.trim().toUpperCase();
+    const { username, category } = req.body;
+
+    if (!username || !category) {
+      return res.status(400).json({
+        message: "Username and category are required",
+      });
+    }
+
+    const allowedCategories = [
+      "all",
+      "fun",
+      "deep",
+      "dating",
+      "friends",
+      "general",
+    ];
+
+    if (!allowedCategories.includes(category)) {
+      return res.status(400).json({
+        message: "Invalid category",
+      });
+    }
+
+    const room = await Room.findOne({ roomCode });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    const hostUsername = room.players?.[0]?.username;
+
+    if (
+      !hostUsername ||
+      hostUsername.toLowerCase() !== username.trim().toLowerCase()
+    ) {
+      return res.status(403).json({
+        message: "Only the host can change the category",
+      });
+    }
+
+    room.selectedCategory = category;
+    await room.save();
+
+    return res.status(200).json({
+      message: "Category updated successfully",
       room,
     });
   } catch (error) {

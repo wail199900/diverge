@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getRoom } from "../api/rooms";
+import { getRoom, updateRoomCategory } from "../api/rooms";
 import { getActiveSession, startSession } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
@@ -15,10 +15,7 @@ export default function LobbyScreen({ navigation }) {
   const room = useGameStore((state) => state.room);
   const setRoom = useGameStore((state) => state.setRoom);
   const setSession = useGameStore((state) => state.setSession);
-  const selectedCategory = useGameStore((state) => state.selectedCategory);
-  const setSelectedCategory = useGameStore(
-    (state) => state.setSelectedCategory,
-  );
+  const selectedCategory = room?.selectedCategory || "all";
 
   const refreshRoom = useCallback(async () => {
     try {
@@ -55,7 +52,7 @@ export default function LobbyScreen({ navigation }) {
   const handleStartGame = async () => {
     try {
       setLoading(true);
-      const sessionData = await startSession(roomCode, selectedCategory);
+      const sessionData = await startSession(roomCode);
       setSession(sessionData);
       hasNavigatedRef.current = true;
       navigation.replace("Question");
@@ -66,6 +63,18 @@ export default function LobbyScreen({ navigation }) {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCategoryChange = async (category) => {
+    try {
+      const response = await updateRoomCategory(roomCode, username, category);
+      setRoom(response.room);
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error?.response?.data?.message || "Failed to update category",
+      );
     }
   };
 
@@ -127,7 +136,7 @@ export default function LobbyScreen({ navigation }) {
                     styles.categoryChip,
                     isSelected && styles.categoryChipSelected,
                   ]}
-                  onPress={() => setSelectedCategory(category.value)}
+                  onPress={() => handleCategoryChange(category.value)}
                 >
                   <Text
                     style={[
@@ -269,7 +278,6 @@ const styles = StyleSheet.create({
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
   },
 
   categoryChip: {
@@ -279,6 +287,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 999,
+    marginRight: 10,
+    marginBottom: 10,
   },
 
   categoryChipSelected: {
