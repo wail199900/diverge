@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  Alert,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { joinRoom } from "../api/rooms";
+import {
+  getUsernameFromStorage,
+  saveUsernameToStorage,
+} from "../storage/userStorage";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
 
@@ -21,6 +25,18 @@ export default function JoinRoomScreen({ navigation }) {
   const setRoom = useGameStore((state) => state.setRoom);
   const setStoredRoomCode = useGameStore((state) => state.setRoomCode);
 
+  useEffect(() => {
+    const loadSavedUsername = async () => {
+      const savedUsername = await getUsernameFromStorage();
+
+      if (savedUsername) {
+        setUsernameInput(savedUsername);
+      }
+    };
+
+    loadSavedUsername();
+  }, []);
+
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       Alert.alert("Validation", "Please enter username and room code");
@@ -29,10 +45,13 @@ export default function JoinRoomScreen({ navigation }) {
 
     try {
       setLoading(true);
+      const trimmedUsername = username.trim();
       const room = await joinRoom(
         roomCode.trim().toUpperCase(),
-        username.trim(),
+        trimmedUsername,
       );
+
+      await saveUsernameToStorage(trimmedUsername);
 
       setUsername(username.trim());
       setRoom(room);
