@@ -1,8 +1,9 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
-import { Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { Text, TouchableOpacity, StyleSheet, Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { finishSession, submitAnswer } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
+import colors from "../theme/colors";
 
 export default function QuestionScreen({ navigation }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -102,35 +103,59 @@ export default function QuestionScreen({ navigation }) {
   if (!currentQuestion) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text>No questions available.</Text>
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyText}>No questions available.</Text>
+        </View>
       </SafeAreaView>
     );
   }
 
+  const progressPercent =
+    questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.timer}>⏱ {timeLeft}s</Text>
-      <Text style={styles.progress}>
-        Question {currentIndex + 1} / {questions.length}
-      </Text>
+      <View style={styles.topRow}>
+        <View style={styles.timerBadge}>
+          <Text style={styles.timerText}>⏱ {timeLeft}s</Text>
+        </View>
+      </View>
 
-      <Text style={styles.question}>{currentQuestion.text}</Text>
+      <View style={styles.progressHeader}>
+        <Text style={styles.progressText}>
+          Question {currentIndex + 1} / {questions.length}
+        </Text>
+        <View style={styles.progressBarTrack}>
+          <View
+            style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
+          />
+        </View>
+      </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => handleAnswer("yes")}
-        disabled={submitting || hasFinishedRef.current}
-      >
-        <Text style={styles.buttonText}>Yes</Text>
-      </TouchableOpacity>
+      <View style={styles.card}>
+        <Text style={styles.questionText}>{currentQuestion.text}</Text>
+      </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => handleAnswer("no")}
-        disabled={submitting || hasFinishedRef.current}
-      >
-        <Text style={styles.buttonText}>No</Text>
-      </TouchableOpacity>
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => handleAnswer("yes")}
+          disabled={submitting || hasFinishedRef.current}
+        >
+          <Text style={styles.primaryButtonText}>
+            {" "}
+            {submitting ? "Submitting..." : "Yes"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => handleAnswer("no")}
+          disabled={submitting || hasFinishedRef.current}
+        >
+          <Text style={styles.secondaryButtonText}>No</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -140,34 +165,114 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 24,
+    backgroundColor: colors.background,
   },
-  progress: {
-    fontSize: 16,
+
+  topRow: {
+    alignItems: "center",
+    marginBottom: 18,
+  },
+
+  timerBadge: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+  },
+
+  timerText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+  },
+
+  progressHeader: {
     marginBottom: 20,
+  },
+
+  progressText: {
+    fontSize: 15,
+    marginBottom: 10,
     textAlign: "center",
+    color: colors.subtext,
   },
-  question: {
-    fontSize: 28,
-    fontWeight: "600",
+
+  progressBarTrack: {
+    height: 10,
+    backgroundColor: "#ECEEF3",
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+  },
+
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 22,
+    padding: 28,
+    marginBottom: 24,
+    minHeight: 240,
+    justifyContent: "center",
+  },
+
+  questionText: {
+    fontSize: 30,
+    fontWeight: "700",
     textAlign: "center",
-    marginBottom: 40,
+    lineHeight: 38,
+    color: colors.text,
   },
-  button: {
-    backgroundColor: "#222",
-    padding: 18,
-    borderRadius: 12,
-    marginBottom: 16,
+
+  actions: {
+    gap: 14,
   },
-  buttonText: {
-    color: "#fff",
+
+  primaryButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 18,
+    borderRadius: 14,
+  },
+  primaryButtonText: {
+    color: colors.primaryText,
     textAlign: "center",
     fontSize: 18,
     fontWeight: "600",
   },
-  timer: {
-    fontSize: 22,
-    fontWeight: "700",
+
+  secondaryButton: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    paddingVertical: 18,
+    borderRadius: 14,
+  },
+
+  secondaryButtonText: {
+    color: colors.primary,
     textAlign: "center",
-    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: "600",
+  },
+
+  emptyCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 20,
+    padding: 24,
+  },
+
+  emptyText: {
+    fontSize: 18,
+    textAlign: "center",
+    color: colors.text,
   },
 });
