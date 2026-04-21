@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Text, TouchableOpacity, StyleSheet, Alert, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getRoom } from "../api/rooms";
 import { getActiveSession, startSession } from "../api/sessions";
@@ -15,6 +15,10 @@ export default function LobbyScreen({ navigation }) {
   const room = useGameStore((state) => state.room);
   const setRoom = useGameStore((state) => state.setRoom);
   const setSession = useGameStore((state) => state.setSession);
+  const selectedCategory = useGameStore((state) => state.selectedCategory);
+  const setSelectedCategory = useGameStore(
+    (state) => state.setSelectedCategory,
+  );
 
   const refreshRoom = useCallback(async () => {
     try {
@@ -51,7 +55,7 @@ export default function LobbyScreen({ navigation }) {
   const handleStartGame = async () => {
     try {
       setLoading(true);
-      const sessionData = await startSession(roomCode);
+      const sessionData = await startSession(roomCode, selectedCategory);
       setSession(sessionData);
       hasNavigatedRef.current = true;
       navigation.replace("Question");
@@ -80,6 +84,15 @@ export default function LobbyScreen({ navigation }) {
   const isHost = room?.players?.[0]?.username === username;
   const canStart = room?.players?.length === 2;
 
+  const categories = [
+    { label: "All", value: "all" },
+    { label: "Fun", value: "fun" },
+    { label: "Deep", value: "deep" },
+    { label: "Dating", value: "dating" },
+    { label: "Friends", value: "friends" },
+    { label: "General", value: "general" },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Lobby</Text>
@@ -97,6 +110,46 @@ export default function LobbyScreen({ navigation }) {
             </View>
           );
         })}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Category</Text>
+
+        {isHost ? (
+          <View style={styles.categoryGrid}>
+            {categories.map((category) => {
+              const isSelected = selectedCategory === category.value;
+
+              return (
+                <TouchableOpacity
+                  key={category.value}
+                  style={[
+                    styles.categoryChip,
+                    isSelected && styles.categoryChipSelected,
+                  ]}
+                  onPress={() => setSelectedCategory(category.value)}
+                >
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      isSelected && styles.categoryChipTextSelected,
+                    ]}
+                  >
+                    {category.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : (
+          <View style={styles.readOnlyCategoryBox}>
+            <Text style={styles.readOnlyCategoryLabel}>Selected by host</Text>
+            <Text style={styles.readOnlyCategoryValue}>
+              {selectedCategory.charAt(0).toUpperCase() +
+                selectedCategory.slice(1)}
+            </Text>
+          </View>
+        )}
       </View>
 
       <TouchableOpacity style={styles.secondaryButton} onPress={refreshRoom}>
@@ -211,5 +264,52 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     color: colors.subtext,
+  },
+
+  categoryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+
+  categoryChip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+
+  categoryChipSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+
+  categoryChipText: {
+    color: colors.text,
+    fontWeight: "500",
+  },
+
+  categoryChipTextSelected: {
+    color: colors.primaryText,
+  },
+
+  readOnlyCategoryBox: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "#FAFAFA",
+    borderRadius: 14,
+    padding: 16,
+  },
+  readOnlyCategoryLabel: {
+    fontSize: 13,
+    color: colors.subtext,
+    marginBottom: 6,
+  },
+  readOnlyCategoryValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
   },
 });

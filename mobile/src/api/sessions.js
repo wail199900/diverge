@@ -1,7 +1,10 @@
 import client from "./client";
 
-export const startSession = async (roomCode) => {
-  const response = await client.post("/api/sessions/start", { roomCode });
+export const startSession = async (roomCode, category = "all") => {
+  const response = await client.post("/api/sessions/start", {
+    roomCode,
+    category,
+  });
   return response.data;
 };
 

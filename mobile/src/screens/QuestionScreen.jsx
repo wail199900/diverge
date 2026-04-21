@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
-import { Text, TouchableOpacity, StyleSheet, Alert, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { finishSession, submitAnswer } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
@@ -15,6 +15,7 @@ export default function QuestionScreen({ navigation }) {
   const username = useGameStore((state) => state.username);
   const roomCode = useGameStore((state) => state.roomCode);
   const session = useGameStore((state) => state.session);
+  const selectedCategory = useGameStore((state) => state.selectedCategory);
 
   const questions = useMemo(() => {
     return session?.questions || [];
@@ -120,6 +121,10 @@ export default function QuestionScreen({ navigation }) {
           <Text style={styles.timerText}>⏱ {timeLeft}s</Text>
         </View>
       </View>
+      <Text style={styles.categoryText}>
+        Category:{" "}
+        {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
+      </Text>
 
       <View style={styles.progressHeader}>
         <Text style={styles.progressText}>
@@ -274,5 +279,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: "center",
     color: colors.text,
+  },
+
+  categoryText: {
+    textAlign: "center",
+    fontSize: 14,
+    color: colors.subtext,
+    marginBottom: 14,
   },
 });

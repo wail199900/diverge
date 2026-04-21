@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post("/start", async (req, res) => {
   try {
-    const { roomCode } = req.body;
+    const { roomCode, category } = req.body;
 
     if (!roomCode) {
       return res.status(400).json({ message: "Room code is required" });
@@ -38,8 +38,13 @@ router.post("/start", async (req, res) => {
         .json({ message: "An active session already exists for this room" });
     }
 
+    const matchStage = { active: true };
+    if (category && category !== "all") {
+      matchStage.category = category;
+    }
+
     const questions = await Question.aggregate([
-      { $match: { active: true } },
+      { $match: matchStage },
       { $sample: { size: 10 } },
     ]);
 
@@ -77,6 +82,7 @@ router.post("/start", async (req, res) => {
       status: session.status,
       startedAt: session.startedAt,
       endsAt: session.endsAt,
+      category: category || "all",
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
