@@ -7,6 +7,7 @@ import HistoryScreen from "../screens/HistoryScreen";
 import HomeScreen from "../screens/HomeScreen";
 import JoinRoomScreen from "../screens/JoinRoomScreen";
 import LobbyScreen from "../screens/LobbyScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 import QuestionScreen from "../screens/QuestionScreen";
 import ResultsScreen from "../screens/ResultsScreen";
 import WaitingScreen from "../screens/WaitingScreen";
@@ -25,6 +26,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Waiting" component={WaitingScreen} />
         <Stack.Screen name="Results" component={ResultsScreen} />
         <Stack.Screen name="History" component={HistoryScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen
           name="HistoryDetails"
           component={HistoryDetailsScreen}

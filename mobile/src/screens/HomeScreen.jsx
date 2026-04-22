@@ -30,6 +30,12 @@ export default function HomeScreen({ navigation }) {
         >
           <Text style={styles.secondaryButtonText}>History</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => navigation.navigate("Profile")}
+        >
+          <Text style={styles.secondaryButtonText}>Profile</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
