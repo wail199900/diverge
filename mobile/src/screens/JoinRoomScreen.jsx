@@ -10,7 +10,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { joinRoom } from "../api/rooms";
 import {
+  getAvatarFromStorage,
   getUsernameFromStorage,
+  saveAvatarToStorage,
   saveUsernameToStorage,
 } from "../storage/userStorage";
 import useGameStore from "../store/useGameStore";
@@ -18,19 +20,27 @@ import colors from "../theme/colors";
 
 export default function JoinRoomScreen({ navigation }) {
   const [username, setUsernameInput] = useState("");
+  const [avatar, setAvatar] = useState("😀");
   const [roomCode, setRoomCodeInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   const setUsername = useGameStore((state) => state.setUsername);
+  const setAvatarInStore = useGameStore((state) => state.setAvatar);
   const setRoom = useGameStore((state) => state.setRoom);
   const setStoredRoomCode = useGameStore((state) => state.setRoomCode);
+
+  const avatarOptions = ["😀", "😎", "🔥", "🧠", "🎯", "🚀", "👾", "🐼"];
 
   useEffect(() => {
     const loadSavedUsername = async () => {
       const savedUsername = await getUsernameFromStorage();
+      const savedAvatar = await getAvatarFromStorage();
 
       if (savedUsername) {
         setUsernameInput(savedUsername);
+      }
+      if (savedAvatar) {
+        setAvatar(savedAvatar);
       }
     };
 
@@ -49,11 +59,14 @@ export default function JoinRoomScreen({ navigation }) {
       const room = await joinRoom(
         roomCode.trim().toUpperCase(),
         trimmedUsername,
+        avatar,
       );
 
       await saveUsernameToStorage(trimmedUsername);
+      await saveAvatarToStorage(avatar);
 
-      setUsername(username.trim());
+      setUsername(trimmedUsername);
+      setAvatarInStore(avatar);
       setRoom(room);
       setStoredRoomCode(room.roomCode);
 
@@ -81,6 +94,26 @@ export default function JoinRoomScreen({ navigation }) {
           placeholder="Enter username"
           style={styles.input}
         />
+
+        <Text style={styles.label}>Choose an avatar</Text>
+        <View style={styles.avatarRow}>
+          {avatarOptions.map((item) => {
+            const isSelected = avatar === item;
+
+            return (
+              <TouchableOpacity
+                key={item}
+                style={[
+                  styles.avatarChip,
+                  isSelected && styles.avatarChipSelected,
+                ]}
+                onPress={() => setAvatar(item)}
+              >
+                <Text style={styles.avatarText}>{item}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         <Text style={styles.label}>Room code</Text>
         <TextInput
@@ -160,5 +193,33 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "600",
     fontSize: 16,
+  },
+
+  avatarRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 18,
+  },
+
+  avatarChip: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    marginBottom: 10,
+    backgroundColor: colors.surface,
+  },
+
+  avatarChipSelected: {
+    borderColor: colors.primary,
+    backgroundColor: "#EEF2FF",
+  },
+
+  avatarText: {
+    fontSize: 24,
   },
 });

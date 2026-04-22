@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post("/create", async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, avatar } = req.body;
 
     if (!username || !username.trim()) {
       return res.status(400).json({ message: "Username is required" });
@@ -29,6 +29,7 @@ router.post("/create", async (req, res) => {
       players: [
         {
           username: username.trim(),
+          avatar: avatar || "😀",
         },
       ],
     });
@@ -42,7 +43,7 @@ router.post("/create", async (req, res) => {
 
 router.post("/join", async (req, res) => {
   try {
-    const { roomCode, username } = req.body;
+    const { roomCode, username, avatar } = req.body;
 
     if (!roomCode || !username || !username.trim()) {
       return res.status(400).json({
@@ -71,6 +72,7 @@ router.post("/join", async (req, res) => {
 
     room.players.push({
       username: username.trim(),
+      avatar: avatar || "😀",
     });
 
     await room.save();

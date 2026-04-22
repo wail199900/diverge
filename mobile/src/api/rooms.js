@@ -1,14 +1,15 @@
 import client from "./client";
 
-export const createRoom = async (username) => {
-  const response = await client.post("/api/rooms/create", { username });
+export const createRoom = async (username, avatar) => {
+  const response = await client.post("/api/rooms/create", { username, avatar });
   return response.data;
 };
 
-export const joinRoom = async (roomCode, username) => {
+export const joinRoom = async (roomCode, username, avatar) => {
   const response = await client.post("/api/rooms/join", {
     roomCode,
     username,
+    avatar,
   });
   return response.data;
 };

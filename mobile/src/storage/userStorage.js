@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const USERNAME_KEY = "diverge_username";
+const AVATAR_KEY = "diverge_avatar";
 
 export const saveUsernameToStorage = async (username) => {
   try {
@@ -20,10 +21,28 @@ export const getUsernameFromStorage = async () => {
   }
 };
 
-export const clearUsernameFromStorage = async () => {
+export const saveAvatarToStorage = async (avatar) => {
   try {
-    await AsyncStorage.removeItem(USERNAME_KEY);
+    await AsyncStorage.setItem(AVATAR_KEY, avatar);
   } catch (error) {
-    console.log("Failed to clear username:", error.message);
+    console.log("Failed to save avatar:", error.message);
+  }
+};
+
+export const getAvatarFromStorage = async () => {
+  try {
+    const avatar = await AsyncStorage.getItem(AVATAR_KEY);
+    return avatar || "😀";
+  } catch (error) {
+    console.log("Failed to load avatar:", error.message);
+    return "😀";
+  }
+};
+
+export const clearUserProfileFromStorage = async () => {
+  try {
+    await AsyncStorage.multiRemove(USERNAME_KEY, AVATAR_KEY);
+  } catch (error) {
+    console.log("Failed to clear profile:", error.message);
   }
 };

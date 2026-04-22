@@ -7,6 +7,10 @@ const playerSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    avatar: {
+      type: String,
+      default: "😀",
+    },
     socketId: {
       type: String,
       default: null,

@@ -113,9 +113,12 @@ export default function LobbyScreen({ navigation }) {
           const isYou = player.username === username;
           return (
             <View key={`${player.username}-${index}`} style={styles.playerRow}>
-              <Text style={styles.playerName}>
-                {player.username} {isYou ? "(You)" : ""}
-              </Text>
+              <View style={styles.playerIdentity}>
+                <Text style={styles.playerAvatar}>{player.avatar || "😀"}</Text>
+                <Text style={styles.playerName}>
+                  {player.username} {isYou ? "(You)" : ""}
+                </Text>
+              </View>
             </View>
           );
         })}
@@ -312,14 +315,26 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
   },
+
   readOnlyCategoryLabel: {
     fontSize: 13,
     color: colors.subtext,
     marginBottom: 6,
   },
+
   readOnlyCategoryValue: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
+  },
+
+  playerIdentity: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  playerAvatar: {
+    fontSize: 24,
+    marginRight: 10,
   },
 });
