@@ -3,6 +3,7 @@ import { Text, TouchableOpacity, StyleSheet, View, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { resetRoom } from "../api/rooms";
 import useGameStore from "../store/useGameStore";
+import { clearRoomCodeFromStorage } from "../storage/userStorage";
 
 export default function ResultsScreen({ navigation }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -14,6 +15,7 @@ export default function ResultsScreen({ navigation }) {
   const setRoom = useGameStore((state) => state.setRoom);
   const setSession = useGameStore((state) => state.setSession);
   const setResults = useGameStore((state) => state.setResults);
+  const clearGame = useGameStore((state) => state.clearGame);
 
   const mismatches = results?.mismatches || [];
 
@@ -47,6 +49,12 @@ export default function ResultsScreen({ navigation }) {
     } finally {
       setResetting(false);
     }
+  };
+
+  const handleExitToHome = async () => {
+    await clearRoomCodeFromStorage();
+    clearGame();
+    navigation.replace("Home");
   };
 
   if (!results) {
@@ -154,6 +162,13 @@ export default function ResultsScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
       )}
+      <br />
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={handleExitToHome}
+      >
+        <Text style={styles.secondaryButtonText}>Exit to Home</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }

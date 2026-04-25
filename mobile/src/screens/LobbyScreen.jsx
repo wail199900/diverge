@@ -5,6 +5,7 @@ import { getRoom, updateRoomCategory } from "../api/rooms";
 import { getActiveSession, startSession } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
+import { clearRoomCodeFromStorage } from "../storage/userStorage";
 
 export default function LobbyScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
@@ -16,6 +17,15 @@ export default function LobbyScreen({ navigation }) {
   const setRoom = useGameStore((state) => state.setRoom);
   const setSession = useGameStore((state) => state.setSession);
   const selectedCategory = room?.selectedCategory || "all";
+
+  const handleLeaveRoom = async () => {
+    await clearRoomCodeFromStorage();
+
+    setRoom(null);
+    setSession(null);
+
+    navigation.replace("Home");
+  };
 
   const refreshRoom = useCallback(async () => {
     try {
@@ -185,6 +195,10 @@ export default function LobbyScreen({ navigation }) {
           Waiting for the host to start the game...
         </Text>
       )}
+
+      <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveRoom}>
+        <Text style={styles.leaveButtonText}>Leave Room</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -336,5 +350,19 @@ const styles = StyleSheet.create({
   playerAvatar: {
     fontSize: 24,
     marginRight: 10,
+  },
+
+  leaveButton: {
+    backgroundColor: "#B91C1C",
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 14,
+  },
+
+  leaveButtonText: {
+    color: colors.primaryText,
+    textAlign: "center",
+    fontWeight: "600",
+    fontSize: 16,
   },
 });
