@@ -14,6 +14,7 @@ import {
   getUsernameFromStorage,
   saveAvatarToStorage,
   saveUsernameToStorage,
+  saveRoomCodeToStorage,
 } from "../storage/userStorage";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
@@ -64,6 +65,7 @@ export default function JoinRoomScreen({ navigation }) {
 
       await saveUsernameToStorage(trimmedUsername);
       await saveAvatarToStorage(avatar);
+      await saveRoomCodeToStorage(room.roomCode);
 
       setUsername(trimmedUsername);
       setAvatarInStore(avatar);
