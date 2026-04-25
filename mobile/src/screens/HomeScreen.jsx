@@ -10,6 +10,7 @@ import {
   getRoomCodeFromStorage,
   getUsernameFromStorage,
 } from "../storage/userStorage";
+import LoadingState from "../components/LoadingState";
 
 export default function HomeScreen({ navigation }) {
   const [savedRoomCode, setSavedRoomCode] = useState("");
@@ -90,6 +91,14 @@ export default function HomeScreen({ navigation }) {
       setLoadingResume(false);
     }
   };
+
+  if (loadingResume) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LoadingState message="Resuming your game..." />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

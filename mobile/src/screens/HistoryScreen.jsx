@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -11,35 +10,40 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getSessionHistory } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
+import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
 
 export default function HistoryScreen({ navigation }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const username = useGameStore((state) => state.username);
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        if (!username) {
-          setLoading(false);
-          return;
-        }
+  const fetchHistory = useCallback(async () => {
+    try {
+      setLoading(true);
+      setErrorMessage("");
 
-        const data = await getSessionHistory(username);
-        setHistory(data);
-      } catch (error) {
-        Alert.alert(
-          "Error",
-          error?.response?.data?.message || "Failed to load history",
-        );
-      } finally {
+      if (!username) {
         setLoading(false);
+        return;
       }
-    };
 
-    fetchHistory();
+      const data = await getSessionHistory(username);
+      setHistory(data);
+    } catch (error) {
+      setErrorMessage(
+        error?.response?.data?.message || "Failed to load history",
+      );
+    } finally {
+      setLoading(false);
+    }
   }, [username]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   const renderItem = ({ item }) => {
     const formattedCategory =
@@ -82,7 +86,15 @@ export default function HistoryScreen({ navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.loadingText}>Loading history...</Text>
+        <LoadingState message="Loading game history..." />
+      </SafeAreaView>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ErrorState message={errorMessage} onRetry={fetchHistory} />
       </SafeAreaView>
     );
   }

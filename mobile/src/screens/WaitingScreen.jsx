@@ -1,47 +1,44 @@
-import { useEffect, useState } from "react";
-import { Text, StyleSheet, ActivityIndicator, Alert, View } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import { Text, StyleSheet, ActivityIndicator, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getResults, getSessionProgress } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
+import ErrorState from "../components/ErrorState";
 
 export default function WaitingScreen({ navigation }) {
   const [progress, setProgress] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const roomCode = useGameStore((state) => state.roomCode);
   const username = useGameStore((state) => state.username);
   const setResults = useGameStore((state) => state.setResults);
 
-  useEffect(() => {
-    let interval;
+  const pollProgress = useCallback(async () => {
+    try {
+      setErrorMessage("");
 
-    const pollProgress = async () => {
-      try {
-        const progressData = await getSessionProgress(roomCode);
-        setProgress(progressData);
+      const progressData = await getSessionProgress(roomCode);
+      setProgress(progressData);
 
-        if (progressData.status === "completed") {
-          clearInterval(interval);
-
-          const results = await getResults(roomCode);
-          setResults(results);
-
-          navigation.replace("Results");
-        }
-      } catch (error) {
-        clearInterval(interval);
-        Alert.alert(
-          "Error",
-          error?.response?.data?.message || "Failed to fetch session progress",
-        );
+      if (progressData.status === "completed") {
+        const results = await getResults(roomCode);
+        setResults(results);
+        navigation.replace("Results");
       }
-    };
+    } catch (error) {
+      setErrorMessage(
+        error?.response?.data?.message || "Failed to fetch session progress",
+      );
+    }
+  }, [roomCode, setResults, navigation]);
 
+  useEffect(() => {
     pollProgress();
-    interval = setInterval(pollProgress, 2000);
+    const interval = setInterval(pollProgress, 2000);
 
     return () => clearInterval(interval);
-  }, [roomCode, setResults, navigation]);
+  }, [pollProgress]);
 
   const players = progress?.players || [];
 
@@ -52,6 +49,14 @@ export default function WaitingScreen({ navigation }) {
   const otherPlayers = players.filter(
     (player) => player.username.toLowerCase() !== username.toLowerCase(),
   );
+
+  if (errorMessage) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ErrorState message={errorMessage} onRetry={pollProgress} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

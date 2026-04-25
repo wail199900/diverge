@@ -1,29 +1,53 @@
-import { useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getSessionDetails } from "../api/sessions";
 import colors from "../theme/colors";
+import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
 
 export default function HistoryDetailsScreen({ route }) {
   const { sessionId } = route.params;
   const [details, setDetails] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const fetchDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      setErrorMessage("");
+
+      const data = await getSessionDetails(sessionId);
+      setDetails(data);
+    } catch (error) {
+      setErrorMessage(
+        error?.response?.data?.message || "Failed to load session details",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionId]);
 
   useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        const data = await getSessionDetails(sessionId);
-        setDetails(data);
-      } catch (error) {
-        Alert.alert(
-          "Error",
-          error?.response?.data?.message || "Failed to load session details",
-        );
-      }
-    };
-
     fetchDetails();
-  }, [sessionId]);
+  }, [fetchDetails]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LoadingState message="Loading session details..." />
+      </SafeAreaView>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ErrorState message={errorMessage} onRetry={fetchDetails} />
+      </SafeAreaView>
+    );
+  }
 
   if (!details) {
     return (
