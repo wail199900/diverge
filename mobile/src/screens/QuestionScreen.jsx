@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  BackHandler,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { finishSession, submitAnswer } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
@@ -25,6 +32,15 @@ export default function QuestionScreen({ navigation }) {
     () => questions[currentIndex],
     [questions, currentIndex],
   );
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => true,
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   const handleTimeUp = useCallback(async () => {
     if (hasFinishedRef.current) return;
