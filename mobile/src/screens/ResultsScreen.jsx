@@ -162,13 +162,14 @@ export default function ResultsScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
       )}
-      <br />
-      <TouchableOpacity
-        style={styles.secondaryButton}
-        onPress={handleExitToHome}
-      >
-        <Text style={styles.secondaryButtonText}>Exit to Home</Text>
-      </TouchableOpacity>
+      <View style={styles.exitButtonWrapper}>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={handleExitToHome}
+        >
+          <Text style={styles.secondaryButtonText}>Exit to Home</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -299,5 +300,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     textAlign: "center",
+  },
+
+  exitButtonWrapper: {
+    marginTop: 14,
   },
 });
