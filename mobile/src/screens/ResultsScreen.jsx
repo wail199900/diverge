@@ -31,7 +31,7 @@ export default function ResultsScreen({ navigation }) {
     }
   };
 
-  const handlePlayAgain = async () => {
+  const resetCurrentRoom = async () => {
     try {
       setResetting(true);
 
@@ -51,10 +51,37 @@ export default function ResultsScreen({ navigation }) {
     }
   };
 
+  const handlePlayAgain = () => {
+    Alert.alert(
+      "Play again?",
+      "This will reset the current room and start a new round.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Play Again",
+          onPress: resetCurrentRoom,
+        },
+      ],
+    );
+  };
+
   const handleExitToHome = async () => {
-    await clearRoomCodeFromStorage();
-    clearGame();
-    navigation.replace("Home");
+    Alert.alert(
+      "Exit to home?",
+      "This will clear your saved room from this device.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Exit",
+          style: "destructive",
+          onPress: async () => {
+            await clearRoomCodeFromStorage();
+            clearGame();
+            navigation.replace("Home");
+          },
+        },
+      ],
+    );
   };
 
   if (!results) {

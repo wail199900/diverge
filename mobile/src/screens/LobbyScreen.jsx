@@ -19,12 +19,25 @@ export default function LobbyScreen({ navigation }) {
   const selectedCategory = room?.selectedCategory || "all";
 
   const handleLeaveRoom = async () => {
-    await clearRoomCodeFromStorage();
+    Alert.alert(
+      "Leave room?",
+      "You will lose access to this active room unless you rejoin with the room code.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: async () => {
+            await clearRoomCodeFromStorage();
 
-    setRoom(null);
-    setSession(null);
+            setRoom(null);
+            setSession(null);
 
-    navigation.replace("Home");
+            navigation.replace("Home");
+          },
+        },
+      ],
+    );
   };
 
   const refreshRoom = useCallback(async () => {
