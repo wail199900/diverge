@@ -226,6 +226,23 @@ export default function QuestionScreen({ navigation }) {
     outputRange: [1, 0],
     extrapolate: "clamp",
   });
+
+  const nextScale = position.x.interpolate({
+    inputRange: [-200, 0, 200],
+    outputRange: [1, 0.96, 1],
+    extrapolate: "clamp",
+  });
+
+  const nextOpacity = position.x.interpolate({
+    inputRange: [-200, 0, 200],
+    outputRange: [1, 0.55, 1],
+    extrapolate: "clamp",
+  });
+
+  const nextTranslateY = position.x.interpolate({
+    inputRange: [-200, 0, 200],
+    outputRange: [0, 18, 0],
+  });
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topRow}>
@@ -248,9 +265,21 @@ export default function QuestionScreen({ navigation }) {
 
       <View style={styles.cardStack}>
         {nextQuestion && (
-          <View style={[styles.card, styles.nextCard]}>
+          <Animated.View
+            style={[
+              styles.card,
+              styles.nextCard,
+              {
+                transform: [
+                  { scale: nextScale },
+                  { translateY: nextTranslateY },
+                ],
+                opacity: nextOpacity,
+              },
+            ]}
+          >
             <Text style={styles.questionText}>{nextQuestion.text}</Text>
-          </View>
+          </Animated.View>
         )}
         <Animated.View
           {...panResponder.panHandlers}
