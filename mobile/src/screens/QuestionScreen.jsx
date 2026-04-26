@@ -39,6 +39,11 @@ export default function QuestionScreen({ navigation }) {
     [questions, currentIndex],
   );
 
+  const nextQuestion = useMemo(
+    () => questions[currentIndex + 1],
+    [questions, currentIndex],
+  );
+
   const formattedCategory =
     selectedCategory === "all"
       ? "All"
@@ -240,31 +245,41 @@ export default function QuestionScreen({ navigation }) {
           />
         </View>
       </View>
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={[
-          styles.card,
-          {
-            transform: [
-              { translateX: position.x },
-              { translateY: position.y },
-              { rotate },
-            ],
-          },
-        ]}
-      >
-        <Animated.Text style={[styles.yesLabel, { opacity: yesOpacity }]}>
-          YES
-        </Animated.Text>
 
-        <Animated.Text style={[styles.noLabel, { opacity: noOpacity }]}>
-          NO
-        </Animated.Text>
+      <View style={styles.cardStack}>
+        {nextQuestion && (
+          <View style={[styles.card, styles.nextCard]}>
+            <Text style={styles.questionText}>{nextQuestion.text}</Text>
+          </View>
+        )}
+        <Animated.View
+          {...panResponder.panHandlers}
+          style={[
+            styles.card,
+            styles.activeCard,
+            {
+              transform: [
+                { translateX: position.x },
+                { translateY: position.y },
+                { rotate },
+              ],
+            },
+          ]}
+        >
+          <Animated.Text style={[styles.yesLabel, { opacity: yesOpacity }]}>
+            YES
+          </Animated.Text>
 
-        <Text style={styles.questionText}>{currentQuestion.text}</Text>
+          <Animated.Text style={[styles.noLabel, { opacity: noOpacity }]}>
+            NO
+          </Animated.Text>
 
-        <Text style={styles.swipeHint}>Swipe right for YES, left for NO</Text>
-      </Animated.View>
+          <Text style={styles.questionText}>{currentQuestion.text}</Text>
+
+          <Text style={styles.swipeHint}>Swipe right for YES, left for NO</Text>
+        </Animated.View>
+      </View>
+
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.secondaryButton}
@@ -344,11 +359,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 22,
+    borderRadius: 24,
     padding: 28,
-    marginBottom: 24,
     minHeight: 300,
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
 
   questionText: {
@@ -445,5 +464,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     transform: [{ rotate: "10deg" }],
+  },
+
+  cardStack: {
+    position: "relative",
+    minHeight: 320,
+    marginBottom: 24,
+  },
+
+  activeCard: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
+  },
+
+  nextCard: {
+    position: "absolute",
+    top: 18,
+    left: 12,
+    right: 12,
+    zIndex: 1,
+    opacity: 0.55,
+    transform: [{ scale: 0.96 }],
   },
 });
