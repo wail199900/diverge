@@ -11,6 +11,7 @@ import ProfileScreen from "../screens/ProfileScreen";
 import QuestionScreen from "../screens/QuestionScreen";
 import ResultsScreen from "../screens/ResultsScreen";
 import WaitingScreen from "../screens/WaitingScreen";
+import HowToPlayScreen from "../screens/HowToPlayScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -46,6 +47,7 @@ export default function AppNavigator() {
           component={HistoryDetailsScreen}
           options={{ title: "Past Game" }}
         />
+        <Stack.Screen name="HowToPlay" component={HowToPlayScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -146,6 +146,12 @@ export default function HomeScreen({ navigation }) {
         >
           <Text style={styles.secondaryButtonText}>Profile</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => navigation.navigate("HowToPlay")}
+        >
+          <Text style={styles.secondaryButtonText}>How to Play</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
