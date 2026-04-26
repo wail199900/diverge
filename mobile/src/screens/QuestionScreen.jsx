@@ -14,6 +14,7 @@ import { finishSession, submitAnswer } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
 import * as Haptics from "expo-haptics";
+import { playSwipeSound, playSuccessSound } from "../utils/sounds";
 
 const SWIPE_THRESHOLD = 120;
 
@@ -125,6 +126,14 @@ export default function QuestionScreen({ navigation }) {
         const isLastQuestion = currentIndex === questions.length - 1;
 
         if (isLastQuestion) {
+          playSuccessSound();
+          hasFinishedRef.current = true;
+          await finishSession(roomCode, username);
+          navigation.replace("Waiting");
+          return;
+        }
+
+        if (isLastQuestion) {
           hasFinishedRef.current = true;
           await finishSession(roomCode, username);
           navigation.replace("Waiting");
@@ -183,6 +192,19 @@ export default function QuestionScreen({ navigation }) {
         },
 
         onPanResponderRelease: (_, gesture) => {
+          if (gesture.dx > SWIPE_THRESHOLD || velocity > 0.8) {
+            playSwipeSound();
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            swipeCardOut("right", "yes");
+            return;
+          }
+
+          if (gesture.dx < -SWIPE_THRESHOLD || velocity < -0.8) {
+            playSwipeSound();
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            swipeCardOut("left", "no");
+            return;
+          }
           const velocity = gesture.vx;
           if (gesture.dx > SWIPE_THRESHOLD || velocity > 0.8) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
