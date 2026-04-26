@@ -6,11 +6,15 @@ import {
   TouchableOpacity,
   View,
   BackHandler,
+  Animated,
+  PanResponder,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { finishSession, submitAnswer } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
+
+const SWIPE_THRESHOLD = 120;
 
 export default function QuestionScreen({ navigation }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -18,10 +22,12 @@ export default function QuestionScreen({ navigation }) {
   const [timeLeft, setTimeLeft] = useState(60);
 
   const hasFinishedRef = useRef(false);
+  const position = useRef(new Animated.ValueXY()).current;
 
   const username = useGameStore((state) => state.username);
   const roomCode = useGameStore((state) => state.roomCode);
   const session = useGameStore((state) => state.session);
+
   const selectedCategory = session?.category || "all";
 
   const questions = useMemo(() => {
@@ -32,6 +38,18 @@ export default function QuestionScreen({ navigation }) {
     () => questions[currentIndex],
     [questions, currentIndex],
   );
+
+  const formattedCategory =
+    selectedCategory === "all"
+      ? "All"
+      : selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1);
+
+  const resetCardPosition = useCallback(() => {
+    Animated.spring(position, {
+      toValue: { x: 0, y: 0 },
+      useNativeDriver: false,
+    }).start();
+  }, [position]);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -84,38 +102,96 @@ export default function QuestionScreen({ navigation }) {
     return () => clearInterval(interval);
   }, [session, handleTimeUp]);
 
-  const handleAnswer = async (answer) => {
-    if (!currentQuestion || submitting || hasFinishedRef.current) return;
+  const handleAnswer = useCallback(
+    async (answer) => {
+      if (!currentQuestion || submitting || hasFinishedRef.current) return;
 
-    try {
-      setSubmitting(true);
+      try {
+        setSubmitting(true);
 
-      await submitAnswer({
-        roomCode,
-        username,
-        questionId: currentQuestion._id,
-        answer,
-      });
+        await submitAnswer({
+          roomCode,
+          username,
+          questionId: currentQuestion._id,
+          answer,
+        });
 
-      const isLastQuestion = currentIndex === questions.length - 1;
+        const isLastQuestion = currentIndex === questions.length - 1;
 
-      if (isLastQuestion) {
-        hasFinishedRef.current = true;
-        await finishSession(roomCode, username);
-        navigation.replace("Waiting");
-        return;
+        if (isLastQuestion) {
+          hasFinishedRef.current = true;
+          await finishSession(roomCode, username);
+          navigation.replace("Waiting");
+          return;
+        }
+        position.setValue({ x: 0, y: 0 });
+        setCurrentIndex((prev) => prev + 1);
+      } catch (error) {
+        resetCardPosition();
+        Alert.alert(
+          "Error",
+          error?.response?.data?.message || "Failed to submit answer",
+        );
+      } finally {
+        setSubmitting(false);
       }
+    },
+    [
+      currentQuestion,
+      submitting,
+      roomCode,
+      username,
+      currentIndex,
+      questions.length,
+      navigation,
+      position,
+      resetCardPosition,
+    ],
+  );
+  const swipeCardOut = useCallback(
+    (direction, answer) => {
+      Animated.timing(position, {
+        toValue: {
+          x: direction === "right" ? 500 : -500,
+          y: 0,
+        },
+        duration: 220,
+        useNativeDriver: false,
+      }).start(() => {
+        handleAnswer(answer);
+      });
+    },
+    [position, handleAnswer],
+  );
 
-      setCurrentIndex((prev) => prev + 1);
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        error?.response?.data?.message || "Failed to submit answer",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () =>
+          !submitting && !hasFinishedRef.current,
+        onMoveShouldSetPanResponder: () =>
+          !submitting && !hasFinishedRef.current,
+
+        onPanResponderMove: (_, gesture) => {
+          position.setValue({ x: gesture.dx, y: gesture.dy });
+        },
+
+        onPanResponderRelease: (_, gesture) => {
+          if (gesture.dx > SWIPE_THRESHOLD) {
+            swipeCardOut("right", "yes");
+            return;
+          }
+
+          if (gesture.dx < -SWIPE_THRESHOLD) {
+            swipeCardOut("left", "no");
+            return;
+          }
+
+          resetCardPosition();
+        },
+      }),
+    [position, resetCardPosition, swipeCardOut, submitting],
+  );
 
   if (!currentQuestion) {
     return (
@@ -129,7 +205,22 @@ export default function QuestionScreen({ navigation }) {
 
   const progressPercent =
     questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
+  const rotate = position.x.interpolate({
+    inputRange: [-220, 0, 220],
+    outputRange: ["-8deg", "0deg", "8deg"],
+    extrapolate: "clamp",
+  });
+  const yesOpacity = position.x.interpolate({
+    inputRange: [20, 120],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
 
+  const noOpacity = position.x.interpolate({
+    inputRange: [-120, -20],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topRow}>
@@ -137,10 +228,7 @@ export default function QuestionScreen({ navigation }) {
           <Text style={styles.timerText}>⏱ {timeLeft}s</Text>
         </View>
       </View>
-      <Text style={styles.categoryText}>
-        Category:{" "}
-        {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
-      </Text>
+      <Text style={styles.categoryText}>Category: {formattedCategory}</Text>
 
       <View style={styles.progressHeader}>
         <Text style={styles.progressText}>
@@ -152,29 +240,48 @@ export default function QuestionScreen({ navigation }) {
           />
         </View>
       </View>
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[
+          styles.card,
+          {
+            transform: [
+              { translateX: position.x },
+              { translateY: position.y },
+              { rotate },
+            ],
+          },
+        ]}
+      >
+        <Animated.Text style={[styles.yesLabel, { opacity: yesOpacity }]}>
+          YES
+        </Animated.Text>
 
-      <View style={styles.card}>
+        <Animated.Text style={[styles.noLabel, { opacity: noOpacity }]}>
+          NO
+        </Animated.Text>
+
         <Text style={styles.questionText}>{currentQuestion.text}</Text>
-      </View>
 
+        <Text style={styles.swipeHint}>Swipe right for YES, left for NO</Text>
+      </Animated.View>
       <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => handleAnswer("yes")}
-          disabled={submitting || hasFinishedRef.current}
-        >
-          <Text style={styles.primaryButtonText}>
-            {" "}
-            {submitting ? "Submitting..." : "Yes"}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={styles.secondaryButton}
-          onPress={() => handleAnswer("no")}
+          onPress={() => swipeCardOut("left", "no")}
           disabled={submitting || hasFinishedRef.current}
         >
           <Text style={styles.secondaryButtonText}>No</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => swipeCardOut("right", "yes")}
+          disabled={submitting || hasFinishedRef.current}
+        >
+          <Text style={styles.primaryButtonText}>
+            {submitting ? "Submitting..." : "Yes"}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -240,7 +347,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 28,
     marginBottom: 24,
-    minHeight: 240,
+    minHeight: 300,
     justifyContent: "center",
   },
 
@@ -302,5 +409,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.subtext,
     marginBottom: 14,
+  },
+  swipeHint: {
+    textAlign: "center",
+    color: colors.subtext,
+    fontSize: 14,
+    marginTop: 24,
+  },
+
+  yesLabel: {
+    position: "absolute",
+    top: 24,
+    left: 24,
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#16A34A",
+    borderWidth: 3,
+    borderColor: "#16A34A",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    transform: [{ rotate: "-10deg" }],
+  },
+
+  noLabel: {
+    position: "absolute",
+    top: 24,
+    right: 24,
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#DC2626",
+    borderWidth: 3,
+    borderColor: "#DC2626",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    transform: [{ rotate: "10deg" }],
   },
 });
