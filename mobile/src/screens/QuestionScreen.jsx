@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { finishSession, submitAnswer } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
+import * as Haptics from "expo-haptics";
 
 const SWIPE_THRESHOLD = 120;
 
@@ -182,12 +183,15 @@ export default function QuestionScreen({ navigation }) {
         },
 
         onPanResponderRelease: (_, gesture) => {
-          if (gesture.dx > SWIPE_THRESHOLD) {
+          const velocity = gesture.vx;
+          if (gesture.dx > SWIPE_THRESHOLD || velocity > 0.8) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             swipeCardOut("right", "yes");
             return;
           }
 
-          if (gesture.dx < -SWIPE_THRESHOLD) {
+          if (gesture.dx < -SWIPE_THRESHOLD || velocity < -0.8) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             swipeCardOut("left", "no");
             return;
           }
@@ -243,92 +247,122 @@ export default function QuestionScreen({ navigation }) {
     inputRange: [-200, 0, 200],
     outputRange: [0, 18, 0],
   });
+  const yesScale = position.x.interpolate({
+    inputRange: [20, 120],
+    outputRange: [0.8, 1.2],
+    extrapolate: "clamp",
+  });
+  const noScale = position.x.interpolate({
+    inputRange: [-120, -20],
+    outputRange: [1.2, 0.8],
+    extrapolate: "clamp",
+  });
+
+  const bgColor = position.x.interpolate({
+    inputRange: [-200, 0, 200],
+    outputRange: ["#FEE2E2", colors.background, "#DCFCE7"],
+    extrapolate: "clamp",
+  });
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topRow}>
-        <View style={styles.timerBadge}>
-          <Text style={styles.timerText}>⏱ {timeLeft}s</Text>
+    <Animated.View style={{ flex: 1, backgroundColor: bgColor }}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.topRow}>
+          <View style={styles.timerBadge}>
+            <Text style={styles.timerText}>⏱ {timeLeft}s</Text>
+          </View>
         </View>
-      </View>
-      <Text style={styles.categoryText}>Category: {formattedCategory}</Text>
+        <Text style={styles.categoryText}>Category: {formattedCategory}</Text>
 
-      <View style={styles.progressHeader}>
-        <Text style={styles.progressText}>
-          Question {currentIndex + 1} / {questions.length}
-        </Text>
-        <View style={styles.progressBarTrack}>
-          <View
-            style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
-          />
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressText}>
+            Question {currentIndex + 1} / {questions.length}
+          </Text>
+          <View style={styles.progressBarTrack}>
+            <View
+              style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.cardStack}>
-        {nextQuestion && (
+        <View style={styles.cardStack}>
+          {nextQuestion && (
+            <Animated.View
+              style={[
+                styles.card,
+                styles.nextCard,
+                {
+                  transform: [
+                    { scale: nextScale },
+                    { translateY: nextTranslateY },
+                  ],
+                  opacity: nextOpacity,
+                },
+              ]}
+            >
+              <Text style={styles.questionText}>{nextQuestion.text}</Text>
+            </Animated.View>
+          )}
           <Animated.View
+            {...panResponder.panHandlers}
             style={[
               styles.card,
-              styles.nextCard,
+              styles.activeCard,
               {
                 transform: [
-                  { scale: nextScale },
-                  { translateY: nextTranslateY },
+                  { translateX: position.x },
+                  { translateY: position.y },
+                  { rotate },
                 ],
-                opacity: nextOpacity,
               },
             ]}
           >
-            <Text style={styles.questionText}>{nextQuestion.text}</Text>
+            <Animated.Text
+              style={[
+                styles.yesLabel,
+                { opacity: yesOpacity, transform: [{ scale: yesScale }] },
+              ]}
+            >
+              YES
+            </Animated.Text>
+
+            <Animated.Text
+              style={[
+                styles.noLabel,
+                { opacity: noOpacity, transform: [{ scale: noScale }] },
+              ]}
+            >
+              NO
+            </Animated.Text>
+
+            <Text style={styles.questionText}>{currentQuestion.text}</Text>
+
+            <Text style={styles.swipeHint}>
+              Swipe right for YES, left for NO
+            </Text>
           </Animated.View>
-        )}
-        <Animated.View
-          {...panResponder.panHandlers}
-          style={[
-            styles.card,
-            styles.activeCard,
-            {
-              transform: [
-                { translateX: position.x },
-                { translateY: position.y },
-                { rotate },
-              ],
-            },
-          ]}
-        >
-          <Animated.Text style={[styles.yesLabel, { opacity: yesOpacity }]}>
-            YES
-          </Animated.Text>
+        </View>
 
-          <Animated.Text style={[styles.noLabel, { opacity: noOpacity }]}>
-            NO
-          </Animated.Text>
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => swipeCardOut("left", "no")}
+            disabled={submitting || hasFinishedRef.current}
+          >
+            <Text style={styles.secondaryButtonText}>No</Text>
+          </TouchableOpacity>
 
-          <Text style={styles.questionText}>{currentQuestion.text}</Text>
-
-          <Text style={styles.swipeHint}>Swipe right for YES, left for NO</Text>
-        </Animated.View>
-      </View>
-
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => swipeCardOut("left", "no")}
-          disabled={submitting || hasFinishedRef.current}
-        >
-          <Text style={styles.secondaryButtonText}>No</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => swipeCardOut("right", "yes")}
-          disabled={submitting || hasFinishedRef.current}
-        >
-          <Text style={styles.primaryButtonText}>
-            {submitting ? "Submitting..." : "Yes"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => swipeCardOut("right", "yes")}
+            disabled={submitting || hasFinishedRef.current}
+          >
+            <Text style={styles.primaryButtonText}>
+              {submitting ? "Submitting..." : "Yes"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
@@ -337,7 +371,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 24,
-    backgroundColor: colors.background,
   },
 
   topRow: {
