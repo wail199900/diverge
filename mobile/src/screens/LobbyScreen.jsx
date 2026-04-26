@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Share,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getRoom, updateRoomCategory } from "../api/rooms";
 import { getActiveSession, startSession } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
 import { clearRoomCodeFromStorage } from "../storage/userStorage";
+import * as Clipboard from "expo-clipboard";
 
 export default function LobbyScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
@@ -18,6 +26,24 @@ export default function LobbyScreen({ navigation }) {
   const setSession = useGameStore((state) => state.setSession);
   const selectedCategory = room?.selectedCategory || "all";
 
+  const handleCopyCode = async () => {
+    try {
+      await Clipboard.setStringAsync(roomCode);
+      Alert.alert("Copied!", "Room code copied to clipboard.");
+    } catch (error) {
+      Alert.alert("Error", "Failed to copy code");
+    }
+  };
+
+  const handleShareCode = async () => {
+    try {
+      await Share.share({
+        message: `Join my Diverge game! Room code: ${roomCode}`,
+      });
+    } catch (error) {
+      Alert.alert("Error", "Failed to share room code");
+    }
+  };
   const handleLeaveRoom = async () => {
     Alert.alert(
       "Leave room?",
@@ -129,6 +155,15 @@ export default function LobbyScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Lobby</Text>
       <Text style={styles.roomCode}>Room Code: {roomCode}</Text>
+      <View style={styles.roomActions}>
+        <TouchableOpacity style={styles.smallButton} onPress={handleCopyCode}>
+          <Text style={styles.smallButtonText}>Copy</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.smallButton} onPress={handleShareCode}>
+          <Text style={styles.smallButtonText}>Share</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Players</Text>
@@ -377,5 +412,24 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "600",
     fontSize: 16,
+  },
+  roomActions: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 20,
+  },
+
+  smallButton: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+
+  smallButtonText: {
+    color: colors.primary,
+    fontWeight: "600",
   },
 });
