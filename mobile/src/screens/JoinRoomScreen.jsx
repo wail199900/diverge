@@ -18,12 +18,14 @@ import {
 } from "../storage/userStorage";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
+import * as Clipboard from "expo-clipboard";
 
 export default function JoinRoomScreen({ navigation }) {
   const [username, setUsernameInput] = useState("");
   const [avatar, setAvatar] = useState("😀");
   const [roomCode, setRoomCodeInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [clipboardCode, setClipboardCode] = useState("");
 
   const setUsername = useGameStore((state) => state.setUsername);
   const setAvatarInStore = useGameStore((state) => state.setAvatar);
@@ -46,6 +48,17 @@ export default function JoinRoomScreen({ navigation }) {
     };
 
     loadSavedUsername();
+
+    const checkClipboard = async () => {
+      const text = await Clipboard.getStringAsync();
+      const cleaned = text.trim().toUpperCase();
+
+      if (/^[A-Z0-9]{6}$/.test(cleaned)) {
+        setClipboardCode(cleaned);
+      }
+    };
+
+    checkClipboard();
   }, []);
 
   const handleJoinRoom = async () => {
@@ -118,6 +131,17 @@ export default function JoinRoomScreen({ navigation }) {
         </View>
 
         <Text style={styles.label}>Room code</Text>
+        {clipboardCode ? (
+          <TouchableOpacity
+            style={styles.clipboardBox}
+            onPress={() => setRoomCodeInput(clipboardCode)}
+          >
+            <Text style={styles.clipboardText}>
+              Use copied room code: {clipboardCode}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         <TextInput
           value={roomCode}
           onChangeText={setRoomCodeInput}
@@ -223,5 +247,20 @@ const styles = StyleSheet.create({
 
   avatarText: {
     fontSize: 24,
+  },
+
+  clipboardBox: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: "#EEF2FF",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+  },
+
+  clipboardText: {
+    color: colors.primary,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
