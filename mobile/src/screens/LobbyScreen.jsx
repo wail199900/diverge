@@ -14,6 +14,7 @@ import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
 import { clearRoomCodeFromStorage } from "../storage/userStorage";
 import * as Clipboard from "expo-clipboard";
+import socket from "../api/socket";
 
 export default function LobbyScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
@@ -128,16 +129,36 @@ export default function LobbyScreen({ navigation }) {
   };
 
   useEffect(() => {
-    refreshRoom();
-    checkForStartedSession();
+    if (!roomCode || !username) return;
 
-    const interval = setInterval(() => {
-      refreshRoom();
-      checkForStartedSession();
-    }, 300);
+    socket.emit("join_room", { roomCode, username });
 
-    return () => clearInterval(interval);
-  }, [refreshRoom, checkForStartedSession]);
+    return () => {
+      socket.emit("leave_room", { roomCode, username });
+    };
+  }, [roomCode, username]);
+
+  useEffect(() => {
+    const handleRoomUpdate = (updatedRoom) => {
+      setRoom(updatedRoom);
+    };
+
+    const handleGameStarted = (sessionData) => {
+      if (!hasNavigatedRef.current) {
+        hasNavigatedRef.current = true;
+        setSession(sessionData);
+        navigation.replace("Question");
+      }
+    };
+
+    socket.on("room_updated", handleRoomUpdate);
+    socket.on("game_started", handleGameStarted);
+
+    return () => {
+      socket.off("room_updated", handleRoomUpdate);
+      socket.off("game_started", handleGameStarted);
+    };
+  }, [setRoom, setSession, navigation]);
 
   const isHost = room?.players?.[0]?.username === username;
   const canStart = room?.players?.length === 2;
