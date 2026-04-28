@@ -1,27 +1,32 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Text, StyleSheet, ActivityIndicator, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getResults, getSessionProgress } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
 import ErrorState from "../components/ErrorState";
+import socket from "../api/socket";
 
 export default function WaitingScreen({ navigation }) {
   const [progress, setProgress] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const hasNavigatedRef = useRef(false);
+
   const roomCode = useGameStore((state) => state.roomCode);
   const username = useGameStore((state) => state.username);
   const setResults = useGameStore((state) => state.setResults);
 
-  const pollProgress = useCallback(async () => {
+  const loadInitialProgress = useCallback(async () => {
     try {
       setErrorMessage("");
 
       const progressData = await getSessionProgress(roomCode);
       setProgress(progressData);
 
-      if (progressData.status === "completed") {
+      if (progressData.status === "completed" && !hasNavigatedRef.current) {
+        hasNavigatedRef.current = true;
+
         const results = await getResults(roomCode);
         setResults(results);
         navigation.replace("Results");
@@ -34,11 +39,32 @@ export default function WaitingScreen({ navigation }) {
   }, [roomCode, setResults, navigation]);
 
   useEffect(() => {
-    pollProgress();
-    const interval = setInterval(pollProgress, 2000);
+    if (!roomCode || !username) return;
 
-    return () => clearInterval(interval);
-  }, [pollProgress]);
+    socket.emit("join_room", { roomCode, username });
+
+    const handleSessionProgress = (progressData) => {
+      setProgress(progressData);
+    };
+
+    const handleGameFinished = (resultsData) => {
+      if (hasNavigatedRef.current) return;
+
+      hasNavigatedRef.current = true;
+      setResults(resultsData);
+      navigation.replace("Results");
+    };
+
+    socket.on("session_progress", handleSessionProgress);
+    socket.on("game_finished", handleGameFinished);
+
+    loadInitialProgress();
+
+    return () => {
+      socket.off("session_progress", handleSessionProgress);
+      socket.off("game_finished", handleGameFinished);
+    };
+  }, [roomCode, username, setResults, navigation, loadInitialProgress]);
 
   const players = progress?.players || [];
 
@@ -53,7 +79,7 @@ export default function WaitingScreen({ navigation }) {
   if (errorMessage) {
     return (
       <SafeAreaView style={styles.container}>
-        <ErrorState message={errorMessage} onRetry={pollProgress} />
+        <ErrorState message={errorMessage} onRetry={loadInitialProgress} />
       </SafeAreaView>
     );
   }
