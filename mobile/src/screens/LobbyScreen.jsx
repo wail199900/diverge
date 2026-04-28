@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getRoom, updateRoomCategory } from "../api/rooms";
-import { getActiveSession, startSession } from "../api/sessions";
+import { startSession } from "../api/sessions";
 import useGameStore from "../store/useGameStore";
 import colors from "../theme/colors";
 import { clearRoomCodeFromStorage } from "../storage/userStorage";
@@ -78,26 +78,6 @@ export default function LobbyScreen({ navigation }) {
       );
     }
   }, [roomCode, setRoom]);
-
-  const checkForStartedSession = useCallback(async () => {
-    try {
-      const sessionData = await getActiveSession(roomCode);
-
-      if (sessionData && !hasNavigatedRef.current) {
-        hasNavigatedRef.current = true;
-        setSession(sessionData);
-        navigation.replace("Question");
-      }
-    } catch (error) {
-      // 404 here is normal if session has not started yet
-      if (error?.response?.status !== 404) {
-        console.log(
-          "Failed to check active session:",
-          error?.response?.data || error.message,
-        );
-      }
-    }
-  }, [roomCode, setSession, navigation]);
 
   const handleStartGame = async () => {
     try {
