@@ -12,18 +12,25 @@ import QuestionScreen from "../screens/QuestionScreen";
 import ResultsScreen from "../screens/ResultsScreen";
 import WaitingScreen from "../screens/WaitingScreen";
 import HowToPlayScreen from "../screens/HowToPlayScreen";
+import {
+  createStackNavigator,
+  CardStyleInterpolators,
+} from "@react-navigation/stack";
 
-const Stack = createNativeStackNavigator();
-
+const Stack = createStackNavigator();
 export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          animation: "slide_from_right",
           gestureEnabled: true,
-          contentStyle: {
+
+          // 👇 THIS removes the card look
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+
+          // 👇 force full screen (no rounded corners)
+          cardStyle: {
             backgroundColor: "#0F172A",
           },
         }}
