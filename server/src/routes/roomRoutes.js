@@ -33,6 +33,10 @@ router.post("/create", async (req, res) => {
         },
       ],
     });
+
+    const io = req.app.get("io");
+    io.to(room.roomCode).emit("room_updated", room);
+
     return res.status(201).json(room);
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -76,6 +80,8 @@ router.post("/join", async (req, res) => {
     });
 
     await room.save();
+    const io = req.app.get("io");
+    io.to(room.roomCode).emit("room_updated", room);
 
     return res.status(200).json(room);
   } catch (error) {
@@ -121,6 +127,10 @@ router.post("/:roomCode/reset", async (req, res) => {
     await room.save();
 
     await GameSession.deleteMany({ roomCode });
+
+    const io = req.app.get("io");
+    io.to(room.roomCode).emit("room_updated", room);
+    io.to(room.roomCode).emit("room_reset", room);
 
     return res.status(200).json({
       message: "Room reset successfully",
@@ -177,6 +187,13 @@ router.patch("/:roomCode/category", async (req, res) => {
 
     room.selectedCategory = category;
     await room.save();
+
+    const io = req.app.get("io");
+    io.to(room.roomCode).emit("room_updated", room);
+    io.to(room.roomCode).emit("category_updated", {
+      roomCode: room.roomCode,
+      selectedCategory: room.selectedCategory,
+    });
 
     return res.status(200).json({
       message: "Category updated successfully",

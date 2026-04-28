@@ -76,17 +76,16 @@ router.post("/start", async (req, res) => {
     room.status = "playing";
     await room.save();
 
-    return res.status(201).json({
-      message: "Game session started",
-      sessionId: session._id,
-      roomCode: session.roomCode,
-      questions,
-      players: session.players,
-      status: session.status,
-      startedAt: session.startedAt,
-      endsAt: session.endsAt,
-      category: category || "all",
-    });
+    const fullSession = await GameSession.findById(session._id).populate(
+      "questions",
+    );
+
+    const io = req.app.get("io");
+
+    io.to(normalizedRoomCode).emit("room_updated", room);
+    io.to(normalizedRoomCode).emit("game_started", fullSession);
+
+    return res.status(201).json(fullSession);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -196,6 +195,19 @@ router.post("/answer", async (req, res) => {
 
     await session.save();
 
+    const io = req.app.get("io");
+
+    const playerAnswersCount = session.answers.filter(
+      (item) => item.username.toLowerCase() === username.trim().toLowerCase(),
+    ).length;
+
+    io.to(normalizedRoomCode).emit("answer_submitted", {
+      roomCode: normalizedRoomCode,
+      username: username.trim(),
+      answersCount: playerAnswersCount,
+      totalQuestions: session.questions.length,
+    });
+
     return res.status(201).json({
       message: "Answer submitted successfully",
       answersCount: session.answers.length,
@@ -245,11 +257,11 @@ router.post("/finish", async (req, res) => {
         .json({ message: "Player already marked as finished" });
     }
 
-    const playerAnswersCount = session.answers.filter(
+    /* const playerAnswersCount = session.answers.filter(
       (a) => a.username.toLowerCase() === normalizedUsername.toLowerCase(),
     ).length;
 
-    /*if (playerAnswersCount !== session.questions.length) {
+    if (playerAnswersCount !== session.questions.length) {
       return res.status(400).json({
         message: "Player cannot finish before answering all questions",
         answered: playerAnswersCount,
@@ -272,6 +284,75 @@ router.post("/finish", async (req, res) => {
     }
 
     await session.save();
+
+    const io = req.app.get("io");
+
+    io.to(normalizedRoomCode).emit("session_progress", {
+      roomCode: session.roomCode,
+      status: session.status,
+      players: session.players,
+    });
+
+    if (allFinished) {
+      const completedSession = await GameSession.findOne({
+        roomCode: normalizedRoomCode,
+        status: "completed",
+      }).populate("questions");
+
+      if (completedSession && completedSession.players.length === 2) {
+        const [playerOne, playerTwo] = completedSession.players;
+
+        let matchesCount = 0;
+
+        const mismatches = completedSession.questions.reduce(
+          (acc, question) => {
+            const firstAnswer = completedSession.answers.find(
+              (a) =>
+                a.username.toLowerCase() === playerOne.username.toLowerCase() &&
+                a.questionId.toString() === question._id.toString(),
+            );
+
+            const secondAnswer = completedSession.answers.find(
+              (a) =>
+                a.username.toLowerCase() === playerTwo.username.toLowerCase() &&
+                a.questionId.toString() === question._id.toString(),
+            );
+
+            if (firstAnswer && secondAnswer) {
+              if (firstAnswer.answer !== secondAnswer.answer) {
+                acc.push({
+                  questionId: question._id,
+                  questionText: question.text,
+                  answers: [
+                    {
+                      username: playerOne.username,
+                      answer: firstAnswer.answer,
+                    },
+                    {
+                      username: playerTwo.username,
+                      answer: secondAnswer.answer,
+                    },
+                  ],
+                });
+              } else {
+                matchesCount += 1;
+              }
+            }
+
+            return acc;
+          },
+          [],
+        );
+
+        io.to(normalizedRoomCode).emit("game_finished", {
+          roomCode: normalizedRoomCode,
+          totalQuestions: completedSession.questions.length,
+          matchesCount,
+          mismatchesCount: mismatches.length,
+          mismatches,
+        });
+      }
+    }
 
     return res.status(200).json({
       message: "Player marked as finished",
