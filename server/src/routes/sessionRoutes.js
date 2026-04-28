@@ -197,15 +197,24 @@ router.post("/answer", async (req, res) => {
 
     const io = req.app.get("io");
 
-    const playerAnswersCount = session.answers.filter(
-      (item) => item.username.toLowerCase() === username.trim().toLowerCase(),
-    ).length;
+    const progressPlayers = session.players.map((player) => {
+      const answersCount = session.answers.filter(
+        (answer) =>
+          answer.username.toLowerCase() === player.username.toLowerCase(),
+      ).length;
 
-    io.to(normalizedRoomCode).emit("answer_submitted", {
-      roomCode: normalizedRoomCode,
-      username: username.trim(),
-      answersCount: playerAnswersCount,
-      totalQuestions: session.questions.length,
+      return {
+        username: player.username,
+        finished: player.finished,
+        answersCount,
+        totalQuestions: session.questions.length,
+      };
+    });
+
+    io.to(normalizedRoomCode).emit("session_progress", {
+      roomCode: session.roomCode,
+      status: session.status,
+      players: progressPlayers,
     });
 
     return res.status(201).json({
@@ -287,10 +296,24 @@ router.post("/finish", async (req, res) => {
 
     const io = req.app.get("io");
 
+    const progressPlayers = session.players.map((player) => {
+      const answersCount = session.answers.filter(
+        (answer) =>
+          answer.username.toLowerCase() === player.username.toLowerCase(),
+      ).length;
+
+      return {
+        username: player.username,
+        finished: player.finished,
+        answersCount,
+        totalQuestions: session.questions.length,
+      };
+    });
+
     io.to(normalizedRoomCode).emit("session_progress", {
       roomCode: session.roomCode,
       status: session.status,
-      players: session.players,
+      players: progressPlayers,
     });
 
     if (allFinished) {
