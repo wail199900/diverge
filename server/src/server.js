@@ -14,12 +14,34 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PATCH"],
   },
 });
 
+app.set("io", io);
+
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+
+  socket.on("join_room", ({ roomCode, username }) => {
+    if (!roomCode || !username) return;
+
+    const normalizedRoomCode = roomCode.trim().toUpperCase();
+
+    socket.join(normalizedRoomCode);
+
+    console.log(`${username} joined socket room ${normalizedRoomCode}`);
+  });
+
+  socket.on("leave_room", ({ roomCode, username }) => {
+    if (!roomCode || !username) return;
+
+    const normalizedRoomCode = roomCode.trim().toUpperCase();
+
+    socket.leave(normalizedRoomCode);
+
+    console.log(`${username} left socket room ${normalizedRoomCode}`);
+  });
 
   socket.on("disconnect", () => {
     console.log(`User disconnected: ${socket.id}`);
