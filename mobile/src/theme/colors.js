@@ -1,12 +1,12 @@
 const colors = {
-  background: "#F7F7FB",
+  background: "#F8FAFC",
   surface: "#FFFFFF",
-  text: "#171717",
-  subtext: "#6B7280",
-  border: "#E5E7EB",
-  primary: "#1F2937",
+  text: "#0F172A",
+  subtext: "#64748B",
+  border: "#E2E8F0",
+  primary: "#6366F1",
   primaryText: "#FFFFFF",
-  accent: "#111827",
+  accent: "#A5B4FC",
 };
 
 export default colors;

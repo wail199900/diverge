@@ -18,7 +18,16 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          animation: "slide_from_right",
+          gestureEnabled: true,
+          contentStyle: {
+            backgroundColor: "#0F172A",
+          },
+        }}
+      >
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="CreateRoom" component={CreateRoomScreen} />
         <Stack.Screen name="JoinRoom" component={JoinRoomScreen} />
@@ -27,26 +36,31 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Question"
           component={QuestionScreen}
-          options={{ headerBackVisible: false, gestureEnabled: false }}
+          options={{
+            gestureEnabled: false,
+            animation: "fade",
+          }}
         />
         <Stack.Screen
           name="Waiting"
           component={WaitingScreen}
-          options={{ headerBackVisible: false, gestureEnabled: false }}
+          options={{
+            gestureEnabled: false,
+            animation: "fade",
+          }}
         />
         <Stack.Screen
           name="Results"
           component={ResultsScreen}
-          options={{ headerBackVisible: false, gestureEnabled: false }}
+          options={{
+            gestureEnabled: false,
+            animation: "fade_from_bottom",
+          }}
         />
 
         <Stack.Screen name="History" component={HistoryScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
-        <Stack.Screen
-          name="HistoryDetails"
-          component={HistoryDetailsScreen}
-          options={{ title: "Past Game" }}
-        />
+        <Stack.Screen name="HistoryDetails" component={HistoryDetailsScreen} />
         <Stack.Screen name="HowToPlay" component={HowToPlayScreen} />
       </Stack.Navigator>
     </NavigationContainer>
